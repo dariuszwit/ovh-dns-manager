@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Domain: {{ domain }}</title>
+</head>
+<body>
+    <h2>Manage Domain: {{ domain }}</h2>
+    
+    <h3>DNS Records</h3>
+    <form method="post" action="{{ url_for('frontend.delete_records', domain=domain, account=account) }}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Record ID</th>
+                    <th>Type</th>
+                    <th>Subdomain</th>
+                    <th>Target</th>
+                    <th>TTL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td><input type="checkbox" name="record_ids" value="{{ record.id }}"></td>
+                    <td>{{ record.id }}</td>
+                    <td>{{ record.fieldType }}</td>
+                    <td>{{ record.subDomain }}</td>
+                    <td>{{ record.target }}</td>
+                    <td>{{ record.ttl }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Delete Selected Records</button>
+    </form>
+    
+    <h3>Add New DNS Records</h3>
+    <form method="post" action="{{ url_for('frontend.add_records', domain=domain, account=account) }}">
+        <div id="records-container">
+            <!-- Początkowy formularz dla pierwszego rekordu -->
+            <div class="record-entry">
+                <label>Type: <input type="text" name="record_0_type" required></label>
+                <label>Subdomain: <input type="text" name="record_0_subDomain"></label>
+                <label>Target: <input type="text" name="record_0_target" required></label>
+                <label>TTL: <input type="text" name="record_0_ttl" value="3600"></label>
+            </div>
+        </div>
+        <input type="hidden" name="number_of_records" id="number_of_records" value="1">
+        <button type="button" onclick="addRecordEntry()">Add Another Record</button>
+        <button type="submit">Submit New Records</button>
+    </form>
+    
+    <br>
+    <a href="{{ url_for('frontend.select_domain', account=account) }}">Back to Domain Selection</a>
+    
+    <script>
+    // Dynamicznie dodaje nowe pola formularza dla rekordów DNS
+    function addRecordEntry() {
+        var container = document.getElementById("records-container");
+        var countInput = document.getElementById("number_of_records");
+        var count = parseInt(countInput.value);
+        var newEntry = document.createElement("div");
+        newEntry.className = "record-entry";
+        newEntry.innerHTML = '<label>Type: <input type="text" name="record_' + count + '_type" required></label> ' +
+                             '<label>Subdomain: <input type="text" name="record_' + count + '_subDomain"></label> ' +
+                             '<label>Target: <input type="text" name="record_' + count + '_target" required></label> ' +
+                             '<label>TTL: <input type="text" name="record_' + count + '_ttl" value="3600"></label>';
+        container.appendChild(newEntry);
+        countInput.value = count + 1;
+    }
+    </script>
+</body>
+</html>

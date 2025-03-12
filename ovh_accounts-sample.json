@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "name": "OVH ACCOUNT 1",
+      "application_key": "key_1",
+      "application_secret": "secret_1",
+      "consumer_key": "consumer_key_1"
+    },
+    {
+      "name": "OVH ACCOUNT 1",
+      "application_key": "key_2",
+      "application_secret": "secret_2",
+      "consumer_key": "consumer_key_2"
+    }
+  ]
+}

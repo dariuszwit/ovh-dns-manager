@@ -1,0 +1,10 @@
+DirectoryIndex disabled
+RewriteEngine On
+# Redirect root URL to the specified port (35100)
+RewriteRule ^$ http://127.0.0.1:35100/ [P,L]
+# If the requested resource is not a file...
+RewriteCond %{REQUEST_FILENAME} !-f
+# ...and not a directory...
+RewriteCond %{REQUEST_FILENAME} !-d
+# ...redirect all other requests to the specified port (35100)
+RewriteRule ^(.*)$ http://127.0.0.1:35100/$1 [P,L]

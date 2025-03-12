@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login OVH Manager</title>
+</head>
+<body>
+    <h2>Login OVH Manager</h2>
+    <form method="post">
+        Username:<br>
+        <input name="username" required><br>
+        Password:<br>
+        <input type="password" name="password" required><br><br>
+        <button type="submit">Login</button>
+        {% if error %}
+            <p style="color:red;">{{ error }}</p>
+        {% endif %}
+    </form>
+</body>
+</html>
