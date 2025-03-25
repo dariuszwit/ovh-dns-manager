@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="{{ get_locale() }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OVH Manager{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon-linis-it.ico') }}" type="image/x-icon">
+</head>
+<body>
+
+    <!-- MENU NAWIGACYJNE -->
+    <nav class="navbar">
+        <div class="left">
+            <img src="{{ url_for('static', filename='logo-linis-it.png') }}" alt="Linis IT" class="logo">
+        </div>
+
+        <div class="menu-icon" onclick="toggleMenu()">☰</div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('frontend.dashboard.dashboard') }}">{{ _('Dashboard') }}</a>
+            <a href="{{ url_for('frontend.domain.select_account') }}">{{ _('Zarządzanie Domenami') }}</a>
+            <a href="{{ url_for('frontend.auth.logout') }}">{{ _('Wyloguj') }}</a>
+        </div>
+    </nav>
+
+    <!-- Pasek breadcrumb -->
+    <div class="breadcrumb">
+        {% block breadcrumb %}
+        <a href="{{ url_for('frontend.dashboard.dashboard') }}">{{ _('Dashboard') }}</a>
+        {% endblock %}
+    </div>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- STOPKA -->
+    <footer class="footer">
+        <p>&copy; 2025 <a href="https://linis.it" target="_blank" style="color: white;">Linis IT</a> - {{ _('Wszelkie prawa zastrzeżone') }}</p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            document.querySelector(".nav-links").classList.toggle("active");
+        }
+    </script>
+
+</body>
+</html>

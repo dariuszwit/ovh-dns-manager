@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Select OVH Account</title>
-</head>
-<body>
-    <h2>Select OVH Account</h2>
+{% extends "base.html" %}
+
+{% block title %}Wybór konta OVH{% endblock %}
+
+{% block content %}
+    <h2>Wybierz konto OVH</h2>
     <form method="post">
         <select name="account">
             {% for account in accounts %}
-            <option value="{{ account.name }}">{{ account.name }}</option>
+                <option value="{{ account.name }}">{{ account.name }}</option>
             {% endfor %}
         </select>
-        <button type="submit">Continue</button>
+        <button type="submit">Kontynuuj</button>
     </form>
-    <a href="{{ url_for('frontend.dashboard') }}">Back to Dashboard</a>
-</body>
-</html>
+    <a href="{{ url_for('frontend.dashboard.dashboard') }}">Powrót do Dashboardu</a>
+{% endblock %}

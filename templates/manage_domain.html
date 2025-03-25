@@ -1,21 +1,40 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Manage Domain: {{ domain }}</title>
-</head>
-<body>
-    <h2>Manage Domain: {{ domain }}</h2>
-    
-    <h3>DNS Records</h3>
-    <form method="post" action="{{ url_for('frontend.delete_records', domain=domain, account=account) }}">
-        <table border="1">
+{% extends "base.html" %}
+
+{% block title %}Zarządzanie domeną: {{ domain }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> / 
+<a href="{{ url_for('frontend.domain.select_account') }}">Wybór konta</a> /
+<a href="{{ url_for('frontend.domain.select_domain', account=account) }}">Wybór domeny</a> /
+<span>Zarządzanie: {{ domain }}</span>
+{% endblock %}
+
+{% block content %}
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <h2>Zarządzanie domeną: {{ domain }}</h2>
+
+    <h3>Rekordy DNS</h3>
+    {% if records %}
+    <form method="post" action="{{ url_for('frontend.records.delete_records', domain=domain, account=account) }}">
+        <table class="records-table">
             <thead>
                 <tr>
-                    <th>Select</th>
-                    <th>Record ID</th>
-                    <th>Type</th>
-                    <th>Subdomain</th>
-                    <th>Target</th>
+                    <th>Wybierz</th>
+                    <th>ID</th>
+                    <th>Typ</th>
+                    <th>Subdomena</th>
+                    <th>Cel</th>
                     <th>TTL</th>
                 </tr>
             </thead>
@@ -32,43 +51,134 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button type="submit">Delete Selected Records</button>
+        <button type="submit" class="add-record-btn">Usuń zaznaczone rekordy</button>
     </form>
+    {% else %}
+    <p>Brak rekordów dla tej domeny.</p>
+    {% endif %}
     
-    <h3>Add New DNS Records</h3>
-    <form method="post" action="{{ url_for('frontend.add_records', domain=domain, account=account) }}">
+    <h3>Dodaj nowy rekord DNS</h3>
+    <form method="post" action="{{ url_for('frontend.records.add_records', domain=domain, account=account) }}">
         <div id="records-container">
-            <!-- Początkowy formularz dla pierwszego rekordu -->
-            <div class="record-entry">
-                <label>Type: <input type="text" name="record_0_type" required></label>
-                <label>Subdomain: <input type="text" name="record_0_subDomain"></label>
-                <label>Target: <input type="text" name="record_0_target" required></label>
-                <label>TTL: <input type="text" name="record_0_ttl" value="3600"></label>
+            <div class="form-group record-row" data-index="0">
+                <div>
+                    <label>Typ:</label>
+                    <select name="record_0_type" class="record-type" onchange="updateRecordForm(this)" required>
+                        {% for record_type in record_types %}
+                            <option value="{{ record_type }}">{{ record_type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Subdomena:</label>
+                    <input type="text" name="record_0_subDomain" placeholder="np. www">
+                </div>
+
+                <div class="target-wrapper">
+                    <label class="target-label">Cel:</label>
+                    <input type="text" name="record_0_target" required placeholder="np. 192.168.1.1">
+                </div>
+
+                <div class="priority-container" style="display: none;">
+                    <label>Priorytet:</label>
+                    <input type="number" name="record_0_priority" placeholder="np. 10">
+                </div>
+
+                <div class="weight-container" style="display: none;">
+                    <label>Waga:</label>
+                    <input type="number" name="record_0_weight" placeholder="np. 5">
+                </div>
+
+                <div class="port-container" style="display: none;">
+                    <label>Port:</label>
+                    <input type="number" name="record_0_port" placeholder="np. 5060">
+                </div>
+
+                <div>
+                    <label>TTL:</label>
+                    <input type="number" name="record_0_ttl" value="3600">
+                </div>
             </div>
         </div>
+
         <input type="hidden" name="number_of_records" id="number_of_records" value="1">
-        <button type="button" onclick="addRecordEntry()">Add Another Record</button>
-        <button type="submit">Submit New Records</button>
+        <button type="button" class="add-record-btn" onclick="addRecordEntry()">Dodaj kolejny rekord</button>
+        <button type="submit" class="add-record-btn">Zapisz rekordy</button>
     </form>
-    
+
     <br>
-    <a href="{{ url_for('frontend.select_domain', account=account) }}">Back to Domain Selection</a>
-    
+    <a href="{{ url_for('frontend.domain.select_domain', account=account) }}">Powrót do wyboru domeny</a>
+
     <script>
-    // Dynamicznie dodaje nowe pola formularza dla rekordów DNS
+    function updateRecordForm(selectElement) {
+        const row = selectElement.closest('.record-row');
+        const type = selectElement.value;
+        const targetLabel = row.querySelector('.target-label');
+        const priority = row.querySelector('.priority-container');
+        const weight = row.querySelector('.weight-container');
+        const port = row.querySelector('.port-container');
+
+        // Reset
+        priority.style.display = 'none';
+        weight.style.display = 'none';
+        port.style.display = 'none';
+        targetLabel.innerText = 'Cel:';
+
+        if (type === 'MX') {
+            targetLabel.innerText = 'Serwer poczty:';
+            priority.style.display = 'block';
+        } else if (type === 'SRV') {
+            targetLabel.innerText = 'Nazwa docelowa:';
+            priority.style.display = 'block';
+            weight.style.display = 'block';
+            port.style.display = 'block';
+        }
+    }
+
     function addRecordEntry() {
-        var container = document.getElementById("records-container");
-        var countInput = document.getElementById("number_of_records");
-        var count = parseInt(countInput.value);
-        var newEntry = document.createElement("div");
-        newEntry.className = "record-entry";
-        newEntry.innerHTML = '<label>Type: <input type="text" name="record_' + count + '_type" required></label> ' +
-                             '<label>Subdomain: <input type="text" name="record_' + count + '_subDomain"></label> ' +
-                             '<label>Target: <input type="text" name="record_' + count + '_target" required></label> ' +
-                             '<label>TTL: <input type="text" name="record_' + count + '_ttl" value="3600"></label>';
+        const container = document.getElementById("records-container");
+        const countInput = document.getElementById("number_of_records");
+        const count = parseInt(countInput.value);
+        const newEntry = document.createElement("div");
+        newEntry.className = "form-group record-row";
+        newEntry.setAttribute("data-index", count);
+        newEntry.innerHTML = `
+            <div>
+                <label>Typ:</label>
+                <select name="record_${count}_type" class="record-type" onchange="updateRecordForm(this)" required>
+                    {% for record_type in record_types %}
+                        <option value="{{ record_type }}">{{ record_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>Subdomena:</label>
+                <input type="text" name="record_${count}_subDomain" placeholder="np. www">
+            </div>
+            <div class="target-wrapper">
+                <label class="target-label">Cel:</label>
+                <input type="text" name="record_${count}_target" required placeholder="np. 192.168.1.1">
+            </div>
+            <div class="priority-container" style="display: none;">
+                <label>Priorytet:</label>
+                <input type="number" name="record_${count}_priority" placeholder="np. 10">
+            </div>
+            <div class="weight-container" style="display: none;">
+                <label>Waga:</label>
+                <input type="number" name="record_${count}_weight" placeholder="np. 5">
+            </div>
+            <div class="port-container" style="display: none;">
+                <label>Port:</label>
+                <input type="number" name="record_${count}_port" placeholder="np. 5060">
+            </div>
+            <div>
+                <label>TTL:</label>
+                <input type="number" name="record_${count}_ttl" value="3600">
+            </div>
+        `;
         container.appendChild(newEntry);
         countInput.value = count + 1;
     }
     </script>
-</body>
-</html>
+{% endblock %}

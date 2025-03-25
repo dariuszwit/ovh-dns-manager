@@ -1,18 +1,47 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Select Domain - {{ account }}</title>
-</head>
-<body>
-    <h2>Domains for account: {{ account }}</h2>
-    <ul>
+{% extends "base.html" %}
+
+{% block title %}Wybór domeny - {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> / 
+<a href="{{ url_for('frontend.domain.select_account') }}">Wybór konta</a> /
+<span>Wybór domeny</span>
+{% endblock %}
+
+{% block content %}
+    <h2>Twoje domeny</h2>
+
+    <!-- Dropdown do wyboru domeny -->
+    <div class="domain-dropdown">
+        <label for="domain-select"><strong>Wybierz domenę:</strong></label>
+        <select id="domain-select" onchange="redirectToDomain()">
+            <option value="">-- Wybierz domenę --</option>
+            {% for domain in domains %}
+                <option value="{{ url_for('frontend.domain.manage_domain', domain=domain, account=account) }}">{{ domain }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Lista kart domen -->
+    <div class="domain-list">
         {% for domain in domains %}
-        <li>
-            {{ domain }} 
-            <a href="{{ url_for('frontend.manage_domain', domain=domain, account=account) }}">Manage</a>
-        </li>
+            <div class="domain-card">
+                <h3>{{ domain }}</h3>
+                <a href="{{ url_for('frontend.domain.manage_domain', domain=domain, account=account) }}">Zarządzaj</a>
+            </div>
         {% endfor %}
-    </ul>
-    <a href="{{ url_for('frontend.select_account') }}">Back to Account Selection</a>
-</body>
-</html>
+    </div>
+
+    <br>
+    <a href="{{ url_for('frontend.domain.select_account') }}">Powrót do wyboru konta</a>
+
+    <script>
+        function redirectToDomain() {
+            var select = document.getElementById("domain-select");
+            var selectedValue = select.value;
+            if (selectedValue) {
+                window.location.href = selectedValue;
+            }
+        }
+    </script>
+{% endblock %}

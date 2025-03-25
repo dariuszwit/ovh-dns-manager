@@ -1,0 +1,290 @@
+@font-face {
+    font-family: 'Roboto';
+    src: url('/static/fonts/Roboto-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/static/fonts/Inter-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3 {
+    font-family: 'Roboto', sans-serif;
+}
+
+.flash-messages {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    border: 1px solid #ffeeba;
+    border-radius: 4px;
+    margin: 1em 0;
+}
+.flash-messages ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Resetowanie domyślnych styli */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Główna zawartość */
+.container {
+    width: 90%;
+    max-width: 900px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Nawigacja */
+.navbar {
+    width: 100%;
+    background-color: #0056b3;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+/* Logo w lewym rogu */
+.navbar .logo {
+    max-width: 200px;
+    height: auto;
+    margin-left: 20px;
+}
+
+/* Linki menu w prawym rogu */
+.nav-links {
+    display: flex;
+    gap: 15px;
+}
+
+/* Hamburger menu */
+.menu-icon {
+    display: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: white;
+}
+
+.nav-links a {
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.nav-links a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Pasek adresu (breadcrumb) */
+.breadcrumb {
+    width: 100%;
+    text-align: left;
+    padding: 10px 20px;
+    background-color: #e0e0e0;
+    font-size: 14px;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+    color: #0056b3;
+    font-weight: bold;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+/* Tabela rekordów DNS */
+.records-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.records-table th, .records-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.records-table th {
+    background-color: #0056b3;
+    color: white;
+}
+
+/* Formularze */
+.form-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: bold;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    max-width: 250px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    background: white;
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 5px rgba(0, 86, 179, 0.3);
+}
+
+/* Przycisk dodawania rekordu */
+.add-record-btn {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    margin-top: 10px;
+    background: #0056b3;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-record-btn:hover {
+    background: #003d82;
+}
+
+/* Lista Domen */
+.domain-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.domain-card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 250px;
+}
+
+.domain-card h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.domain-card a {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #0056b3;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.domain-card a:hover {
+    background: #003d82;
+}
+
+/* Dropdown do wyboru domeny */
+.domain-dropdown {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.domain-dropdown select {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    background: white;
+}
+
+.domain-dropdown select:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 5px rgba(0, 86, 179, 0.3);
+}
+
+/* Stopka */
+.footer {
+    width: 100%;
+    background-color: #222;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    position: fixed;
+    bottom: 0;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 60px;
+        right: 10px;
+        background: #0056b3;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .menu-icon {
+        display: block;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 10px;
+    }
+
+    .form-group {
+        flex-direction: column;
+    }
+}

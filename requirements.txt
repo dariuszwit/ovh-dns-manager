@@ -1,2 +1,4 @@
 flask
 ovh
+Flask-Babel
+flask_login

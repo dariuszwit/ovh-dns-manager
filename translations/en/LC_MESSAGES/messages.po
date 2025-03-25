@@ -1,0 +1,19 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Zarządzanie Domenami"
+msgstr "Domain Management"
+
+msgid "Wyloguj"
+msgstr "Logout"
+
+msgid "Witaj w OVH Manager!"
+msgstr "Welcome to OVH Manager!"
+
+msgid "To jest przykładowa aplikacja do zarządzania domenami."
+msgstr "This is a sample application for domain management."
