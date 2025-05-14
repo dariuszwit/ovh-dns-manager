@@ -45,3 +45,5 @@ Pipfile.lock
 .gps-extension/
 ovh_accounts.json
 users.json
+output/
+lib/

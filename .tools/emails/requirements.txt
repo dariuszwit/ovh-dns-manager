@@ -1,7 +1,3 @@
-flask
-ovh
-Flask-Babel
-flask_login
 networkx
 matplotlib
 pyvis
@@ -11,3 +7,4 @@ openpyxl
 pandas
 streamlit
 reportlab
+ovh
