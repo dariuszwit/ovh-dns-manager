@@ -4,4 +4,4 @@ from flask import Blueprint
 records_bp = Blueprint('records', __name__)
 
 # Importujemy widoki
-from . import add_records, delete_records
+from . import add_records, delete_records, edit_record

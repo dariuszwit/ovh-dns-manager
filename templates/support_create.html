@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Nowe zgłoszenie — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.support.select_account') }}">Zgłoszenia</a> /
+<a href="{{ url_for('frontend.support.ticket_list', account=account) }}">{{ account }}</a> /
+<span>Nowe zgłoszenie</span>
+{% endblock %}
+
+{% block content %}
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Przetwarzanie...</span>
+    </div>
+
+    <h2>&#10133; Nowe zgłoszenie</h2>
+
+    <div class="detail-section">
+        <div class="inline-form visible" style="background: var(--color-surface);">
+            <div class="form-row" style="flex-direction: column; gap: 14px;">
+                <div class="form-field">
+                    <label>Temat</label>
+                    <input type="text" id="ticket-subject" placeholder="Opisz krótko problem...">
+                </div>
+                <div class="form-field">
+                    <label>Kategoria</label>
+                    <select id="ticket-category">
+                        <option value="assistance">Pomoc techniczna</option>
+                        <option value="billing">Rozliczenia</option>
+                        <option value="incident">Awaria / Incydent</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Usługa (opcjonalnie)</label>
+                    <select id="ticket-service">
+                        <option value="">— Brak —</option>
+                        {% for svc in services %}
+                        <option value="{{ svc.name }}">{{ svc.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Treść zgłoszenia</label>
+                    <textarea id="ticket-body" style="min-height: 160px;" placeholder="Opisz szczegółowo problem lub pytanie..."></textarea>
+                </div>
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 10px;">
+                <button class="btn btn-success" onclick="submitTicket()">&#128228; Wyślij zgłoszenie</button>
+                <a href="{{ url_for('frontend.support.ticket_list', account=account) }}" class="btn btn-outline">Anuluj</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('active');
+    }
+    function showToast(message, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type + ' visible';
+        t.textContent = message;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function() { t.remove(); }, 300); }, 3500);
+    }
+
+    function submitTicket() {
+        var subject = document.getElementById('ticket-subject').value.trim();
+        var body = document.getElementById('ticket-body').value.trim();
+        var category = document.getElementById('ticket-category').value;
+        var serviceName = document.getElementById('ticket-service').value;
+
+        if (!subject) { showToast('Temat jest wymagany.', 'error'); return; }
+        if (!body) { showToast('Treść jest wymagana.', 'error'); return; }
+
+        showLoading('Tworzenie zgłoszenia...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('subject', subject);
+        fd.append('body', body);
+        fd.append('category', category);
+        if (serviceName) fd.append('serviceName', serviceName);
+
+        fetch('{{ url_for("frontend.support.create_ticket") }}', {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() {
+                    window.location.href = '{{ url_for("frontend.support.ticket_list", account=account) }}';
+                }, 1500);
+            } else {
+                showToast(data.error || 'Błąd tworzenia zgłoszenia', 'error');
+            }
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+    </script>
+{% endblock %}

@@ -11,9 +11,9 @@
 {% block content %}
     <h2>Twoje domeny</h2>
 
-    <!-- Dropdown do wyboru domeny -->
+    <!-- Quick search dropdown -->
     <div class="domain-dropdown">
-        <label for="domain-select"><strong>Wybierz domenę:</strong></label>
+        <label for="domain-select">Szybki wybór domeny</label>
         <select id="domain-select" onchange="redirectToDomain()">
             <option value="">-- Wybierz domenę --</option>
             {% for domain in domains %}
@@ -22,18 +22,17 @@
         </select>
     </div>
 
-    <!-- Lista kart domen -->
+    <!-- Domain cards grid -->
     <div class="domain-list">
         {% for domain in domains %}
             <div class="domain-card">
                 <h3>{{ domain }}</h3>
-                <a href="{{ url_for('frontend.domain.manage_domain', domain=domain, account=account) }}">Zarządzaj</a>
+                <a href="{{ url_for('frontend.domain.manage_domain', domain=domain, account=account) }}">Zarządzaj &rarr;</a>
             </div>
         {% endfor %}
     </div>
 
-    <br>
-    <a href="{{ url_for('frontend.domain.select_account') }}">Powrót do wyboru konta</a>
+    <a href="{{ url_for('frontend.domain.select_account') }}" class="back-link">&larr; Powrót do wyboru konta</a>
 
     <script>
         function redirectToDomain() {

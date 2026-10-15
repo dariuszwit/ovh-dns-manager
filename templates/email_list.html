@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Domeny Email — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.email.select_account') }}">Email</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#9993; Domeny email na koncie <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if email_domains %}
+        <div class="module-grid">
+            {% for domain in email_domains %}
+            <a href="{{ url_for('frontend.email.email_detail', domain=domain, account=account) }}" class="module-card">
+                <div class="module-card-icon">&#9993;</div>
+                <div class="module-card-name">{{ domain }}</div>
+                <div class="module-card-action">Zarządzaj &rarr;</div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">&#9993;</div>
+            <p>Brak domen email na tym koncie.</p>
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.email.select_account') }}" class="back-link">&larr; Zmień konto</a>
+{% endblock %}

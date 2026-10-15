@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Certyfikaty SSL — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.ssl.select_account') }}">SSL</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128274; Certyfikaty SSL na koncie <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if certificates %}
+        <div class="module-grid">
+            {% for cert in certificates %}
+            <a href="{{ url_for('frontend.ssl.ssl_detail', service_name=cert.get('serviceName', cert), account=account) }}" class="module-card">
+                <div class="module-card-icon">&#128274;</div>
+                <div class="module-card-name">{{ cert.get('serviceName', cert) }}</div>
+                <div class="module-card-action">Szczegóły &rarr;</div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">&#128274;</div>
+            <p>Brak certyfikatów SSL na tym koncie.</p>
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.ssl.select_account') }}" class="back-link">&larr; Zmień konto</a>
+{% endblock %}

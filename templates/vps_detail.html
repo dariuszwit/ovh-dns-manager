@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}VPS — {{ vps_name }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.vps.select_account') }}">VPS</a> /
+<a href="{{ url_for('frontend.vps.vps_list', account=account) }}">{{ account }}</a> /
+<span>{{ vps_name }}</span>
+{% endblock %}
+
+{% block content %}
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Przetwarzanie...</span>
+    </div>
+
+    <h2>&#128421; {{ vps_name }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- VPS Info -->
+    {% if info %}
+    <div class="detail-section">
+        <h3>Informacje o serwerze</h3>
+        <div class="info-grid">
+            {% if info.displayName %}
+            <div class="info-item">
+                <span class="info-label">Nazwa</span>
+                <span class="info-value">{{ info.displayName }}</span>
+            </div>
+            {% endif %}
+            {% if info.name %}
+            <div class="info-item">
+                <span class="info-label">Hostname</span>
+                <span class="info-value">{{ info.name }}</span>
+            </div>
+            {% endif %}
+            {% if info.state %}
+            <div class="info-item">
+                <span class="info-label">Stan</span>
+                <span class="info-value">
+                    <span class="status-badge {% if info.state == 'running' %}status-active{% elif info.state == 'stopped' %}status-inactive{% endif %}">
+                        {{ info.state }}
+                    </span>
+                </span>
+            </div>
+            {% endif %}
+            {% if info.model %}
+            <div class="info-item">
+                <span class="info-label">Oferta</span>
+                <span class="info-value">{{ info.model.get('offer', '—') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">CPU / RAM</span>
+                <span class="info-value">{{ info.model.get('vcore', '—') }} vCPU / {{ info.model.get('memory', '—') }} MB</span>
+            </div>
+            {% endif %}
+            {% if info.zone %}
+            <div class="info-item">
+                <span class="info-label">Datacenter</span>
+                <span class="info-value">{{ info.zone }}</span>
+            </div>
+            {% endif %}
+            {% if info.offerType %}
+            <div class="info-item">
+                <span class="info-label">Typ oferty</span>
+                <span class="info-value">{{ info.offerType }}</span>
+            </div>
+            {% endif %}
+            {% if info.netbootMode %}
+            <div class="info-item">
+                <span class="info-label">Netboot</span>
+                <span class="info-value">{{ info.netbootMode }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="detail-section">
+        <h3>&#9881; Zarządzanie</h3>
+        <div class="action-row">
+            <button class="btn btn-success" onclick="vpsAction('reboot', '{{ vps_name }}')">&#128260; Restart</button>
+            <button class="btn btn-success" onclick="vpsAction('start', '{{ vps_name }}')">&#9654; Uruchom</button>
+            <button class="btn btn-warning" onclick="vpsAction('stop', '{{ vps_name }}')">&#9724; Zatrzymaj</button>
+            <a href="{{ url_for('frontend.vps.console', vps_name=vps_name, account=account) }}" class="btn btn-outline">&#128187; Konsola VNC</a>
+        </div>
+
+        <!-- Reinstall -->
+        <div style="margin-top: 16px;">
+            <button class="btn btn-outline" onclick="toggleReinstall()">&#128190; Reinstalacja systemu...</button>
+            <div id="reinstall-form" class="inline-form">
+                <h4>&#9888;&#65039; Reinstalacja VPS</h4>
+                <div style="background: linear-gradient(135deg, #fef2f2, #fff1f2); border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px;">
+                    <p style="color: #991b1b; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px;">&#128680; UWAGA — operacja nieodwracalna!</p>
+                    <ul style="color: #b91c1c; font-size: 0.8rem; margin: 0; padding-left: 18px; line-height: 1.7;">
+                        <li>Wszystkie dane na serwerze zostaną <strong>trwale usunięte</strong></li>
+                        <li>System operacyjny zostanie zastąpiony wybranym obrazem</li>
+                        <li>Konfiguracja sieciowa, usługi i pliki zostaną utracone</li>
+                        <li>Serwer będzie niedostępny podczas reinstalacji</li>
+                    </ul>
+                </div>
+                <div class="form-row">
+                    <div class="form-field" style="flex: 2;">
+                        <label>Szablon systemu</label>
+                        <select id="reinstall-image">
+                            <option value="">Ładowanie...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top: 4px;">
+                    <div class="form-field" style="flex: 2;">
+                        <label>Wpisz <strong>reinstall</strong> aby potwierdzić</label>
+                        <input type="text" id="reinstall-confirm" placeholder="reinstall" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="form-field" style="flex: 0 0 auto;">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-danger" id="reinstall-btn" onclick="doReinstall('{{ vps_name }}')" disabled>Reinstaluj</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- IPs -->
+    <div class="detail-section">
+        <h3>&#127760; Adresy IP ({{ ips|length }})</h3>
+        {% if ips %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr><th>Adres IP</th></tr>
+                </thead>
+                <tbody>
+                    {% for ip in ips %}
+                    <tr><td><strong>{{ ip }}</strong></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak danych o adresach IP.</div>
+        {% endif %}
+    </div>
+
+    <!-- Disks -->
+    <div class="detail-section">
+        <h3>&#128190; Dyski ({{ disks|length }})</h3>
+        {% if disks %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Rozmiar</th>
+                        <th>Typ</th>
+                        <th>Stan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for disk in disks %}
+                    <tr>
+                        <td>{{ disk.get('id', '—') }}</td>
+                        <td><strong>{{ disk.get('size', '—') }} GB</strong></td>
+                        <td>{{ disk.get('type', '—') }}</td>
+                        <td>
+                            <span class="status-badge {% if disk.get('state') == 'ok' or disk.get('state') == 'connected' %}status-active{% else %}status-inactive{% endif %}">
+                                {{ disk.get('state', '—') }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak danych o dyskach.</div>
+        {% endif %}
+    </div>
+
+    <!-- Monitoring -->
+    {% if monitoring and monitoring.get('values') %}
+    <div class="detail-section">
+        <h3>&#128200; CPU (ostatni dzień)</h3>
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Czas</th>
+                        <th>Użycie CPU (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for point in monitoring.values[-12:] %}
+                    <tr>
+                        <td>{{ point.get('timestamp', '—') }}</td>
+                        <td><strong>{{ point.get('value', '—') }}%</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.vps.vps_list', account=account) }}" class="back-link">&larr; Powrót do listy VPS</a>
+
+    <script>
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('active');
+    }
+    function showToast(message, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type + ' visible';
+        t.textContent = message;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function() { t.remove(); }, 300); }, 3500);
+    }
+
+    // Enable reinstall button only when user types 'reinstall'
+    (function() {
+        var input = document.getElementById('reinstall-confirm');
+        var btn = document.getElementById('reinstall-btn');
+        if (input && btn) {
+            input.addEventListener('input', function() {
+                btn.disabled = (input.value.trim().toLowerCase() !== 'reinstall');
+            });
+        }
+    })();
+
+    function vpsAction(action, name) {
+        var labels = {reboot: 'Restartowanie', start: 'Uruchamianie', stop: 'Zatrzymywanie'};
+        var warnings = {
+            reboot: 'Restart serwera spowoduje krótką przerwę w działaniu wszystkich usług.\n\nWszystkie aktywne połączenia zostaną przerwane.\n\nCzy na pewno chcesz zrestartować serwer ' + name + '?',
+            start: 'Serwer zostanie uruchomiony.\n\nCzy kontynuować?',
+            stop: '⚠ UWAGA: Zatrzymanie serwera spowoduje natychmiastowe wyłączenie.\n\n• Wszystkie uruchomione usługi zostaną zatrzymane\n• Aktywne połączenia zostaną przerwane\n• Serwer nie będzie dostępny do momentu ponownego uruchomienia\n\nCzy na pewno chcesz zatrzymać serwer ' + name + '?'
+        };
+        if (!confirm(warnings[action])) return;
+
+        showLoading(labels[action] + ' serwera...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.vps.reboot", vps_name="__VPS__") }}'.replace('__VPS__', name).replace('reboot', action), {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.error || 'Błąd operacji', 'error');
+            }
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+
+    var reinstallOpen = false;
+    var imagesLoaded = false;
+    function toggleReinstall() {
+        var form = document.getElementById('reinstall-form');
+        reinstallOpen = !reinstallOpen;
+        form.classList.toggle('visible', reinstallOpen);
+        if (reinstallOpen && !imagesLoaded) loadImages();
+    }
+
+    function loadImages() {
+        fetch('{{ url_for("frontend.vps.available_images", vps_name=vps_name) }}?account={{ account }}')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var sel = document.getElementById('reinstall-image');
+            sel.innerHTML = '<option value="">— Wybierz system —</option>';
+            if (Array.isArray(data)) {
+                data.forEach(function(img) {
+                    var opt = document.createElement('option');
+                    opt.value = img.id || img;
+                    opt.textContent = img.name || img.id || img;
+                    sel.appendChild(opt);
+                });
+            }
+            imagesLoaded = true;
+        })
+        .catch(function() {
+            document.getElementById('reinstall-image').innerHTML = '<option value="">Błąd ładowania obrazów</option>';
+        });
+    }
+
+    function doReinstall(name) {
+        var imageId = document.getElementById('reinstall-image').value;
+        if (!imageId) { showToast('Wybierz system operacyjny.', 'error'); return; }
+
+        var confirmInput = document.getElementById('reinstall-confirm').value.trim().toLowerCase();
+        if (confirmInput !== 'reinstall') {
+            showToast('Wpisz "reinstall" w pole potwierdzenia.', 'error');
+            return;
+        }
+
+        showLoading('Reinstalacja serwera...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('templateId', imageId);
+
+        fetch('{{ url_for("frontend.vps.reinstall", vps_name="__VPS__") }}'.replace('__VPS__', name), {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) showToast(data.message, 'success');
+            else showToast(data.error || 'Błąd reinstalacji', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+    </script>
+{% endblock %}

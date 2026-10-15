@@ -3,7 +3,10 @@
 {% block title %}{{ _('Błąd 404 - Nie znaleziono') }}{% endblock %}
 
 {% block content %}
-    <h2>⚠️ {{ _('Błąd 404') }}</h2>
-    <p>{{ _('Nie znaleziono strony, której szukasz.') }}</p>
-    <a href="{{ url_for('home') }}">{{ _('Powrót do strony głównej') }}</a>
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <h2>{{ _('Nie znaleziono') }}</h2>
+        <p>{{ _('Nie znaleziono strony, której szukasz.') }}</p>
+        <a href="{{ url_for('home') }}">&larr; {{ _('Powrót do strony głównej') }}</a>
+    </div>
 {% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Zgłoszenie #{{ ticket_id }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.support.select_account') }}">Zgłoszenia</a> /
+<a href="{{ url_for('frontend.support.ticket_list', account=account) }}">{{ account }}</a> /
+<span>#{{ ticket_id }}</span>
+{% endblock %}
+
+{% block content %}
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Przetwarzanie...</span>
+    </div>
+
+    <h2>&#128172; Zgłoszenie #{{ ticket_id }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Ticket Info -->
+    {% if ticket %}
+    <div class="detail-section">
+        <h3>Informacje o zgłoszeniu</h3>
+        <div class="info-grid">
+            {% if ticket.subject %}
+            <div class="info-item">
+                <span class="info-label">Temat</span>
+                <span class="info-value">{{ ticket.subject }}</span>
+            </div>
+            {% endif %}
+            {% set state = ticket.get('state', ticket.get('status', '')) %}
+            {% if state %}
+            <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-value">
+                    <span class="ticket-status">
+                        <span class="ticket-status-dot {% if state in ['open', 'assigned', 'customerReply'] %}ticket-status-dot--open{% elif state in ['closed', 'resolved'] %}ticket-status-dot--closed{% else %}ticket-status-dot--unknown{% endif %}"></span>
+                        {{ state }}
+                    </span>
+                </span>
+            </div>
+            {% endif %}
+            {% if ticket.get('category') or ticket.get('type') %}
+            <div class="info-item">
+                <span class="info-label">Kategoria</span>
+                <span class="info-value">{{ ticket.get('category', ticket.get('type', '—')) }}</span>
+            </div>
+            {% endif %}
+            {% if ticket.get('serviceName') %}
+            <div class="info-item">
+                <span class="info-label">Usługa</span>
+                <span class="info-value">{{ ticket.serviceName }}</span>
+            </div>
+            {% endif %}
+            {% if ticket.get('creationDate') %}
+            <div class="info-item">
+                <span class="info-label">Utworzono</span>
+                <span class="info-value">{{ ticket.creationDate[:19] }}</span>
+            </div>
+            {% endif %}
+            {% if ticket.get('updateDate') %}
+            <div class="info-item">
+                <span class="info-label">Ostatnia aktualizacja</span>
+                <span class="info-value">{{ ticket.updateDate[:19] }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Close / Reopen -->
+        <div class="action-row" style="margin-top: 16px;">
+            {% if state not in ['closed', 'resolved'] %}
+            <button class="btn btn-warning" onclick="closeTicket()">&#128274; Zamknij zgłoszenie</button>
+            {% else %}
+            <button class="btn btn-outline" onclick="toggleReopen()">&#128275; Otwórz ponownie...</button>
+            {% endif %}
+        </div>
+
+        <!-- Reopen form -->
+        <div id="reopen-form" class="inline-form">
+            <h4>Ponowne otwarcie zgłoszenia</h4>
+            <div class="form-row">
+                <div class="form-field" style="flex: 3;">
+                    <label>Treść wiadomości</label>
+                    <textarea id="reopen-body" placeholder="Dlaczego otwierasz ponownie..."></textarea>
+                </div>
+            </div>
+            <button class="btn btn-success" onclick="doReopen()">Otwórz ponownie</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Messages -->
+    <div class="detail-section">
+        <h3>&#128488; Wiadomości ({{ messages|length }})</h3>
+        {% if messages %}
+        <div class="ticket-thread">
+            {% for msg in messages %}
+            <div class="ticket-msg {% if msg.get('from') == 'customer' or msg.get('senderType') == 'customer' %}ticket-msg--customer{% else %}ticket-msg--support{% endif %}">
+                <div class="ticket-msg-header">
+                    <span class="ticket-msg-author">
+                        {% if msg.get('from') == 'customer' or msg.get('senderType') == 'customer' %}
+                            &#128100; Ty
+                        {% else %}
+                            &#128736; OVH Support
+                        {% endif %}
+                    </span>
+                    <span class="ticket-msg-date">{{ (msg.get('creationDate') or msg.get('date') or '—')[:19] }}</span>
+                </div>
+                <div class="ticket-msg-body">{{ msg.get('body') or msg.get('message') or msg.get('content') or msg.get('text') or msg.get('description') or '(brak treści)' }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak wiadomości.</div>
+        {% endif %}
+    </div>
+
+    <!-- Reply form -->
+    {% set state = ticket.get('state', ticket.get('status', '')) %}
+    {% if state not in ['closed', 'resolved'] %}
+    <div class="detail-section">
+        <h3>&#9999; Odpowiedz</h3>
+        <div class="ticket-reply-form">
+            <textarea id="reply-body" placeholder="Wpisz treść odpowiedzi..."></textarea>
+            <div style="margin-top: 12px;">
+                <button class="btn btn-success" onclick="sendReply()">&#128228; Wyślij odpowiedź</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.support.ticket_list', account=account) }}" class="back-link">&larr; Powrót do listy zgłoszeń</a>
+
+    <script>
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('active');
+    }
+    function showToast(message, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type + ' visible';
+        t.textContent = message;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function() { t.remove(); }, 300); }, 3500);
+    }
+
+    function sendReply() {
+        var body = document.getElementById('reply-body').value.trim();
+        if (!body) { showToast('Wpisz treść wiadomości.', 'error'); return; }
+
+        showLoading('Wysyłanie odpowiedzi...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('body', body);
+
+        fetch('{{ url_for("frontend.support.reply", ticket_id=ticket_id) }}', {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                showToast(data.error || 'Błąd wysyłania', 'error');
+            }
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+
+    function closeTicket() {
+        if (!confirm('Czy na pewno chcesz zamknąć to zgłoszenie?')) return;
+        showLoading('Zamykanie zgłoszenia...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.support.close_ticket", ticket_id=ticket_id) }}', {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                showToast(data.error || 'Błąd zamykania', 'error');
+            }
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+
+    var reopenOpen = false;
+    function toggleReopen() {
+        reopenOpen = !reopenOpen;
+        document.getElementById('reopen-form').classList.toggle('visible', reopenOpen);
+    }
+
+    function doReopen() {
+        var body = document.getElementById('reopen-body').value.trim();
+        if (!body) { showToast('Wpisz treść wiadomości.', 'error'); return; }
+
+        showLoading('Otwieranie zgłoszenia...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('body', body);
+
+        fetch('{{ url_for("frontend.support.reopen_ticket", ticket_id=ticket_id) }}', {
+            method: 'POST', body: fd
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                showToast(data.error || 'Błąd otwierania', 'error');
+            }
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd połączenia: ' + err, 'error'); });
+    }
+    </script>
+{% endblock %}

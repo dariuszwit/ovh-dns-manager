@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Zgłoszenia — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.support.select_account') }}">Zgłoszenia</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128172; Zgłoszenia na koncie <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('frontend.support.create_ticket', account=account) }}" class="btn btn-success">&#10133; Nowe zgłoszenie</a>
+    </div>
+
+    {% if tickets %}
+    <div class="records-table-wrap">
+        <table class="records-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Temat</th>
+                    <th>Status</th>
+                    <th>Kategoria</th>
+                    <th>Data utworzenia</th>
+                    <th>Ostatnia aktualizacja</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                <tr>
+                    <td><strong>#{{ t.get('ticketId', '—') }}</strong></td>
+                    <td>{{ t.get('subject', '—') }}</td>
+                    <td>
+                        {% set state = t.get('state', t.get('status', 'unknown')) %}
+                        <span class="ticket-status">
+                            <span class="ticket-status-dot {% if state in ['open', 'assigned', 'customerReply'] %}ticket-status-dot--open{% elif state in ['closed', 'resolved'] %}ticket-status-dot--closed{% else %}ticket-status-dot--unknown{% endif %}"></span>
+                            {{ state }}
+                        </span>
+                    </td>
+                    <td>{{ t.get('category', t.get('type', '—')) }}</td>
+                    <td>{{ t.get('creationDate', '—')[:19] if t.get('creationDate') else '—' }}</td>
+                    <td>{{ t.get('updateDate', t.get('lastMessageDate', '—'))[:19] if t.get('updateDate', t.get('lastMessageDate')) else '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('frontend.support.ticket_detail', ticket_id=t.get('ticketId', 0), account=account) }}" class="btn btn-sm">Otwórz &rarr;</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128172;</div>
+        <p>Brak zgłoszeń na tym koncie.</p>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.support.select_account') }}" class="back-link">&larr; Zmień konto</a>
+{% endblock %}

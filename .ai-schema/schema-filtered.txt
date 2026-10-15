@@ -1,0 +1,81 @@
+Project structure (ignoring selected files):
+|-- -DWILENTHI.gitignore
+|-- .qodo
+|-- .vscode
+    |-- .gps-ignore
+    |-- .repair
+|-- app.py
+|-- babel.cfg
+|-- backend
+|-- check_token.py
+|-- config
+    |-- __init__.py
+    |-- settings.py
+|-- core
+|-- frontend
+    |-- __init__.py
+    |-- constants
+        |-- dns_record_types.py
+    |-- helpers
+        |-- __init__.py
+        |-- get_record_types.py
+        |-- load_accounts.py
+        |-- load_users.py
+    |-- routes.py
+    |-- views
+        |-- api
+            |-- __init__.py
+            |-- ovh_client.py
+        |-- auth
+            |-- __init__.py
+            |-- decorators.py
+            |-- login.py
+            |-- logout.py
+        |-- dashboard
+            |-- __init__.py
+            |-- dashboard.py
+        |-- domain
+            |-- __init__.py
+            |-- manage_domain.py
+            |-- select_account.py
+            |-- select_domain.py
+        |-- errors
+            |-- __init__.py
+            |-- error_handlers.py
+        |-- records
+            |-- __init__.py
+            |-- add_records copy.py
+            |-- add_records.py
+            |-- delete_records.py
+|-- instruction.md
+|-- ovh-manager-DWILENTHI.bat
+|-- ovh-manager.bat
+|-- ovh-manager.cmd
+|-- ovh-manager.ps1
+|-- ovh_accounts-sample.json
+|-- ovh_accounts.json
+|-- passenger_wsgi.py
+|-- requirements.txt
+|-- routes
+|-- run_app.ps1
+|-- setup_translations.ps1
+|-- static
+    |-- fonts
+    |-- style.css
+|-- templates
+    |-- base.html
+    |-- dashboard.html
+    |-- errors
+        |-- 404.html
+    |-- login.html
+    |-- manage_domain.html
+    |-- select_account.html
+    |-- select_domain.html
+|-- test_ovh_post_request_working.py
+|-- translations
+    |-- en
+        |-- LC_MESSAGES
+    |-- pl
+        |-- LC_MESSAGES
+|-- users-samlple.json
+|-- users.json

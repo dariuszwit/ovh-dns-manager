@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Faktury — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.account.select_account') }}">Konto OVH</a> /
+<a href="{{ url_for('frontend.account.account_info', account=account) }}">{{ account }}</a> /
+<span>Faktury</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128176; Faktury — <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if bills %}
+    <div class="records-table-wrap">
+        <table class="records-table">
+            <thead>
+                <tr>
+                    <th>Nr faktury</th>
+                    <th>Data</th>
+                    <th>Kwota netto</th>
+                    <th>Kwota brutto</th>
+                    <th>Waluta</th>
+                    <th>PDF</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in bills %}
+                <tr>
+                    <td><strong>{{ bill.get('billId', '—') }}</strong></td>
+                    <td>{{ bill.get('date', '—') }}</td>
+                    <td>{{ bill.get('priceWithoutTax', {}).get('text', '—') }}</td>
+                    <td>{{ bill.get('priceWithTax', {}).get('text', '—') }}</td>
+                    <td>{{ bill.get('priceWithTax', {}).get('currencyCode', '—') }}</td>
+                    <td>
+                        {% if bill.get('pdfUrl') %}
+                        <a href="{{ bill.pdfUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">&#128196; PDF</a>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128176;</div>
+        <p>Brak faktur na tym koncie.</p>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.account.account_info', account=account) }}" class="back-link">&larr; Powrót do informacji o koncie</a>
+{% endblock %}

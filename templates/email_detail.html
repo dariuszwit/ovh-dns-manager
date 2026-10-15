@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Email — {{ domain }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.email.select_account') }}">Email</a> /
+<a href="{{ url_for('frontend.email.email_list', account=account) }}">{{ account }}</a> /
+<span>{{ domain }}</span>
+{% endblock %}
+
+{% block content %}
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Przetwarzanie...</span>
+    </div>
+
+    <h2>&#9993; {{ domain }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Domain Info -->
+    {% if domain_info %}
+    <div class="detail-section">
+        <h3>Informacje o domenie</h3>
+        <div class="info-grid">
+            {% if domain_info.domain %}
+            <div class="info-item">
+                <span class="info-label">Domena</span>
+                <span class="info-value">{{ domain_info.domain }}</span>
+            </div>
+            {% endif %}
+            {% if domain_info.offer %}
+            <div class="info-item">
+                <span class="info-label">Oferta</span>
+                <span class="info-value">{{ domain_info.offer }}</span>
+            </div>
+            {% endif %}
+            {% if domain_info.status %}
+            <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-value status-badge {% if domain_info.status == 'ok' %}status-active{% else %}status-inactive{% endif %}">{{ domain_info.status }}</span>
+            </div>
+            {% endif %}
+            {% if domain_info.allowedAccountSize is defined %}
+            <div class="info-item">
+                <span class="info-label">Max rozmiar konta</span>
+                <span class="info-value">{{ domain_info.allowedAccountSize }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Email Accounts -->
+    <div class="detail-section">
+        <h3>&#128231; Konta email ({{ accounts_list|length }})</h3>
+        <button class="btn btn-sm" onclick="toggleForm('create-account-form')" style="margin-bottom: 12px;">&#10133; Utwórz konto</button>
+
+        <!-- Create account form -->
+        <div id="create-account-form" class="inline-form">
+            <h4>Utwórz nowe konto email</h4>
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Nazwa konta</label>
+                    <input type="text" id="new-acc-name" placeholder="np. jan.kowalski">
+                </div>
+                <div class="form-field">
+                    <label>Hasło</label>
+                    <input type="password" id="new-acc-password" placeholder="Min. 9 znaków">
+                </div>
+                <div class="form-field">
+                    <label>Opis</label>
+                    <input type="text" id="new-acc-description" placeholder="Opcjonalny opis">
+                </div>
+                <div class="form-field" style="flex: 0 0 auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-success" onclick="createAccount()">Utwórz</button>
+                </div>
+            </div>
+        </div>
+
+        {% if accounts_list %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Konto</th>
+                        <th>Opis</th>
+                        <th>Rozmiar</th>
+                        <th>Blokada spamu</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for acc in accounts_list %}
+                    <tr id="acc-row-{{ acc.get('accountName', '') }}">
+                        <td><strong>{{ acc.get('accountName', '—') }}@{{ domain }}</strong></td>
+                        <td>{{ acc.get('description', '—') }}</td>
+                        <td>{{ acc.get('size', '—') }}</td>
+                        <td>
+                            {% if acc.get('isBlocked') %}
+                                <span class="status-badge status-inactive">Zablokowane</span>
+                            {% else %}
+                                <span class="status-badge status-active">OK</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-row">
+                                <button class="btn btn-sm" onclick="togglePasswordForm('{{ acc.get('accountName', '') }}')">&#128273; Hasło</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteAccount('{{ acc.get('accountName', '') }}')">&#128465; Usuń</button>
+                            </div>
+                            <div id="pwd-form-{{ acc.get('accountName', '') }}" class="inline-form" style="margin-top: 8px;">
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label>Nowe hasło</label>
+                                        <input type="password" id="pwd-{{ acc.get('accountName', '') }}" placeholder="Min. 9 znaków">
+                                    </div>
+                                    <div class="form-field" style="flex: 0 0 auto;">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-success" onclick="changePassword('{{ acc.get('accountName', '') }}')">Zmień</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak kont email.</div>
+        {% endif %}
+    </div>
+
+    <!-- Redirections -->
+    <div class="detail-section">
+        <h3>&#128257; Przekierowania ({{ redirections|length }})</h3>
+        <button class="btn btn-sm" onclick="toggleForm('create-redir-form')" style="margin-bottom: 12px;">&#10133; Dodaj przekierowanie</button>
+
+        <!-- Create redirection form -->
+        <div id="create-redir-form" class="inline-form">
+            <h4>Nowe przekierowanie</h4>
+            <div class="form-row">
+                <div class="form-field">
+                    <label>Z adresu</label>
+                    <input type="text" id="redir-from" placeholder="np. info@{{ domain }}">
+                </div>
+                <div class="form-field">
+                    <label>Na adres</label>
+                    <input type="email" id="redir-to" placeholder="np. jan@gmail.com">
+                </div>
+                <div class="form-field" style="flex: 0 0 auto;">
+                    <label>Kopia lokalna</label>
+                    <select id="redir-local-copy">
+                        <option value="false">Nie</option>
+                        <option value="true">Tak</option>
+                    </select>
+                </div>
+                <div class="form-field" style="flex: 0 0 auto;">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-success" onclick="createRedirection()">Dodaj</button>
+                </div>
+            </div>
+        </div>
+
+        {% if redirections %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Z adresu</th>
+                        <th>Na adres</th>
+                        <th>Kopia lokalna</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in redirections %}
+                    <tr id="redir-row-{{ r.get('id', loop.index) }}">
+                        <td><strong>{{ r.get('from', '—') }}</strong></td>
+                        <td>{{ r.get('to', '—') }}</td>
+                        <td>{{ 'Tak' if r.get('localCopy') else 'Nie' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteRedirection('{{ r.get('id', '') }}')">&#128465; Usuń</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak przekierowań.</div>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('frontend.email.email_list', account=account) }}" class="back-link">&larr; Powrót do listy domen email</a>
+
+    <script>
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+    function hideLoading() { document.getElementById('loading-overlay').classList.remove('active'); }
+    function showToast(message, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type + ' visible';
+        t.textContent = message;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function() { t.remove(); }, 300); }, 3500);
+    }
+    function toggleForm(id) {
+        var form = document.getElementById(id);
+        form.classList.toggle('visible');
+    }
+    function togglePasswordForm(accName) {
+        var form = document.getElementById('pwd-form-' + accName);
+        form.classList.toggle('visible');
+    }
+
+    function createAccount() {
+        var name = document.getElementById('new-acc-name').value.trim();
+        var password = document.getElementById('new-acc-password').value;
+        var desc = document.getElementById('new-acc-description').value.trim();
+        if (!name || !password) { showToast('Nazwa i hasło są wymagane.', 'error'); return; }
+
+        showLoading('Tworzenie konta...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('accountName', name);
+        fd.append('password', password);
+        fd.append('description', desc);
+
+        fetch('{{ url_for("frontend.email.create_account", domain=domain) }}', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); setTimeout(function() { location.reload(); }, 1200); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function deleteAccount(accName) {
+        if (!confirm('Usunąć konto ' + accName + '@{{ domain }}? Tej operacji nie można cofnąć.')) return;
+        showLoading('Usuwanie konta...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.email.delete_account", domain=domain, acc_name="__ACC__") }}'.replace('__ACC__', accName), { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); setTimeout(function() { location.reload(); }, 1200); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function changePassword(accName) {
+        var password = document.getElementById('pwd-' + accName).value;
+        if (!password) { showToast('Hasło jest wymagane.', 'error'); return; }
+
+        showLoading('Zmiana hasła...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('password', password);
+
+        fetch('{{ url_for("frontend.email.change_password", domain=domain, acc_name="__ACC__") }}'.replace('__ACC__', accName), { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); togglePasswordForm(accName); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function createRedirection() {
+        var from = document.getElementById('redir-from').value.trim();
+        var to = document.getElementById('redir-to').value.trim();
+        var localCopy = document.getElementById('redir-local-copy').value;
+        if (!from || !to) { showToast('Oba adresy są wymagane.', 'error'); return; }
+
+        showLoading('Tworzenie przekierowania...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('from', from);
+        fd.append('to', to);
+        fd.append('localCopy', localCopy);
+
+        fetch('{{ url_for("frontend.email.create_redirection", domain=domain) }}', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); setTimeout(function() { location.reload(); }, 1200); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function deleteRedirection(redirId) {
+        if (!confirm('Usunąć to przekierowanie?')) return;
+        showLoading('Usuwanie przekierowania...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.email.delete_redirection", domain=domain, redir_id="__RID__") }}'.replace('__RID__', redirId), { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); setTimeout(function() { location.reload(); }, 1200); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+    </script>
+{% endblock %}

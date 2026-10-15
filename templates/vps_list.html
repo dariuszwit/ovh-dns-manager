@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Serwery VPS — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.vps.select_account') }}">VPS</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128421; Serwery VPS na koncie <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if servers %}
+        <div class="module-grid">
+            {% for vps in servers %}
+            <a href="{{ url_for('frontend.vps.vps_detail', vps_name=vps.get('name', vps.get('displayName', '')), account=account) }}" class="module-card">
+                <div class="module-card-icon">&#128421;</div>
+                <div class="module-card-name">{{ vps.get('displayName', vps.get('name', '—')) }}</div>
+                <div style="margin: 6px 0;">
+                    {% if vps.get('state') %}
+                    <span class="status-badge {% if vps.get('state') == 'running' %}status-active{% elif vps.get('state') == 'stopped' %}status-inactive{% else %}status-badge{% endif %}">
+                        {{ vps.state }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if vps.get('model') and vps.model.get('offer') %}
+                <div style="font-size: 0.78rem; color: var(--color-text-muted);">{{ vps.model.offer }} &bull; {{ vps.model.get('vcore', '—') }} vCPU &bull; {{ vps.model.get('memory', '—') }} MB RAM</div>
+                {% endif %}
+                <div class="module-card-action">Szczegóły &rarr;</div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">&#128421;</div>
+            <p>Brak serwerów VPS na tym koncie.</p>
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.vps.select_account') }}" class="back-link">&larr; Zmień konto</a>
+{% endblock %}

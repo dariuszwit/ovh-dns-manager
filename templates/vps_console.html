@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Konsola VNC — {{ vps_name }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.vps.select_account') }}">VPS</a> /
+<a href="{{ url_for('frontend.vps.vps_list', account=account) }}">{{ account }}</a> /
+<a href="{{ url_for('frontend.vps.vps_detail', vps_name=vps_name, account=account) }}">{{ vps_name }}</a> /
+<span>Konsola</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128187; Konsola VNC — {{ vps_name }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="console-container">
+        <div class="console-header">
+            <div class="console-header-title">
+                <div class="console-dots">
+                    <span class="console-dot console-dot--red"></span>
+                    <span class="console-dot console-dot--yellow"></span>
+                    <span class="console-dot console-dot--green"></span>
+                </div>
+                {{ vps_name }}
+            </div>
+            {% if console_url %}
+            <a href="{{ console_url }}" target="_blank" class="btn btn-sm" style="font-size: 0.75rem;">Otwórz w nowej karcie &#8599;</a>
+            {% endif %}
+        </div>
+
+        {% if console_url %}
+        <iframe src="{{ console_url }}" class="console-iframe" allow="clipboard-read; clipboard-write"></iframe>
+        {% else %}
+        <div class="console-fallback">
+            <p>&#9888; Nie udało się otworzyć sesji konsoli VNC.</p>
+            <p style="margin-top:8px;">Upewnij się, że serwer jest uruchomiony i spróbuj ponownie.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('frontend.vps.vps_detail', vps_name=vps_name, account=account) }}" class="back-link">&larr; Powrót do szczegółów VPS</a>
+{% endblock %}

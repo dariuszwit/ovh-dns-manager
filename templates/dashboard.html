@@ -3,10 +3,62 @@
 {% block title %}Dashboard - OVH Manager{% endblock %}
 
 {% block content %}
-    <h2>Witaj, {{ username }}!</h2>
-    
-    <div class="dashboard-links">
-        <p><a href="{{ url_for('frontend.domain.select_account') }}">Zarządzaj domenami OVH</a></p>
-        <p><a href="{{ url_for('frontend.auth.logout') }}">Wyloguj</a></p>
+    <h2 class="dashboard-greeting">Witaj, {{ username }}!</h2>
+    <p class="dashboard-subtitle">Panel zarządzania OVH</p>
+
+    <div class="dashboard-grid">
+        <a href="{{ url_for('frontend.domain.select_account') }}" class="dash-card dash-card--domains">
+            <div class="dash-card-icon">&#127760;</div>
+            <div class="dash-card-title">Zarządzaj domenami</div>
+            <div class="dash-card-desc">Przeglądaj konta OVH, zarządzaj rekordami DNS i konfiguracją domen.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.hosting.select_account') }}" class="dash-card dash-card--hosting">
+            <div class="dash-card-icon">&#128451;</div>
+            <div class="dash-card-title">Hosting</div>
+            <div class="dash-card-desc">Zarządzaj hostingami, bazami danych i użytkownikami FTP.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.email.select_account') }}" class="dash-card dash-card--email">
+            <div class="dash-card-icon">&#9993;</div>
+            <div class="dash-card-title">Poczta email</div>
+            <div class="dash-card-desc">Zarządzaj kontami email, przekierowaniami i domenami pocztowymi.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.ssl.select_account') }}" class="dash-card dash-card--ssl">
+            <div class="dash-card-icon">&#128274;</div>
+            <div class="dash-card-title">SSL / DNSSEC</div>
+            <div class="dash-card-desc">Przeglądaj certyfikaty SSL, status DNSSEC i zadania związane z bezpieczeństwem.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.account.select_account') }}" class="dash-card dash-card--account">
+            <div class="dash-card-icon">&#128100;</div>
+            <div class="dash-card-title">Konto OVH</div>
+            <div class="dash-card-desc">Informacje o koncie, lista usług i historia faktur.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.vps.select_account') }}" class="dash-card dash-card--vps">
+            <div class="dash-card-icon">&#128421;</div>
+            <div class="dash-card-title">Serwery VPS</div>
+            <div class="dash-card-desc">Zarządzaj serwerami VPS, restart, konsola, monitoring.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.support.select_account') }}" class="dash-card dash-card--support">
+            <div class="dash-card-icon">&#128172;</div>
+            <div class="dash-card-title">Zgłoszenia</div>
+            <div class="dash-card-desc">Przeglądaj i twórz zgłoszenia do supportu OVH.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.billing.select_account') }}" class="dash-card dash-card--billing">
+            <div class="dash-card-icon">&#128176;</div>
+            <div class="dash-card-title">Faktury</div>
+            <div class="dash-card-desc">Przeglądaj faktury, pobieraj PDF-y i sprawdzaj historię płatności.</div>
+        </a>
+
+        <a href="{{ url_for('frontend.auth.logout') }}" class="dash-card dash-card--logout">
+            <div class="dash-card-icon">&#128682;</div>
+            <div class="dash-card-title">Wyloguj</div>
+            <div class="dash-card-desc">Zakończ bieżącą sesję i bezpiecznie wyloguj się z panelu.</div>
+        </a>
     </div>
 {% endblock %}

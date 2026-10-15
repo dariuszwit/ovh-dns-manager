@@ -3,18 +3,23 @@
 {% block title %}Logowanie - OVH Manager{% endblock %}
 
 {% block content %}
-    <h2>Logowanie</h2>
-    <form method="post">
-        <label for="username">Login:</label>
-        <input id="username" name="username" required>
+    <div class="login-wrapper">
+        <div class="login-header">
+            <h2>Logowanie</h2>
+            <p>Zaloguj się do panelu OVH Manager</p>
+        </div>
+        <form method="post" class="login-form">
+            <label for="username">Login</label>
+            <input id="username" name="username" required placeholder="Nazwa użytkownika">
 
-        <label for="password">Hasło:</label>
-        <input id="password" type="password" name="password" required>
+            <label for="password">Hasło</label>
+            <input id="password" type="password" name="password" required placeholder="Twoje hasło">
 
-        <button type="submit">Zaloguj</button>
+            <button type="submit">Zaloguj się</button>
 
-        {% if error %}
-            <p style="color:red;">{{ error }}</p>
-        {% endif %}
-    </form>
+            {% if error %}
+                <div class="login-error">{{ error }}</div>
+            {% endif %}
+        </form>
+    </div>
 {% endblock %}

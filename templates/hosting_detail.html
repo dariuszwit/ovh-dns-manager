@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Hosting — {{ hosting_name }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.hosting.select_account') }}">Hosting</a> /
+<a href="{{ url_for('frontend.hosting.hosting_list', account=account) }}">{{ account }}</a> /
+<span>{{ hosting_name }}</span>
+{% endblock %}
+
+{% block content %}
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <span id="loading-text">Przetwarzanie...</span>
+    </div>
+
+    <h2>&#128451; {{ hosting_name }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Hosting Info -->
+    {% if info %}
+    <div class="detail-section">
+        <h3>Informacje o hostingu</h3>
+        <div class="info-grid">
+            {% if info.displayName %}
+            <div class="info-item">
+                <span class="info-label">Nazwa</span>
+                <span class="info-value">{{ info.displayName }}</span>
+            </div>
+            {% endif %}
+            {% if info.offer %}
+            <div class="info-item">
+                <span class="info-label">Oferta</span>
+                <span class="info-value">{{ info.offer }}</span>
+            </div>
+            {% endif %}
+            {% if info.operatingSystem %}
+            <div class="info-item">
+                <span class="info-label">System</span>
+                <span class="info-value">{{ info.operatingSystem }}</span>
+            </div>
+            {% endif %}
+            {% if info.phpVersion %}
+            <div class="info-item">
+                <span class="info-label">PHP</span>
+                <span class="info-value">{{ info.phpVersion }}</span>
+            </div>
+            {% endif %}
+            {% if info.state %}
+            <div class="info-item">
+                <span class="info-label">Stan</span>
+                <span class="info-value status-badge {% if info.state == 'active' %}status-active{% else %}status-inactive{% endif %}">{{ info.state }}</span>
+            </div>
+            {% endif %}
+            {% if info.hostingIp %}
+            <div class="info-item">
+                <span class="info-label">IP</span>
+                <span class="info-value">{{ info.hostingIp }}</span>
+            </div>
+            {% endif %}
+            {% if info.cluster %}
+            <div class="info-item">
+                <span class="info-label">Klaster</span>
+                <span class="info-value">{{ info.cluster }}</span>
+            </div>
+            {% endif %}
+            {% if info.quotaSize %}
+            <div class="info-item">
+                <span class="info-label">Przestrzeń</span>
+                <span class="info-value">{{ info.quotaUsed }} / {{ info.quotaSize }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="detail-section">
+        <h3>&#9881; Zarządzanie</h3>
+        <div class="action-row">
+            <button class="btn btn-warning" onclick="restartHosting()">&#128260; Restart hostingu</button>
+        </div>
+    </div>
+
+    <!-- Databases -->
+    <div class="detail-section">
+        <h3>&#128451; Bazy danych ({{ databases|length }})</h3>
+        {% if databases %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Typ</th>
+                        <th>Serwer</th>
+                        <th>Stan</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for db in databases %}
+                    <tr>
+                        <td><strong>{{ db.get('name', db.get('user', '—')) }}</strong></td>
+                        <td>{{ db.get('type', '—') }}</td>
+                        <td>{{ db.get('server', '—') }}</td>
+                        <td>
+                            <span class="status-badge {% if db.get('state') == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                {{ db.get('state', '—') }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="dumpDatabase('{{ db.get('name', db.get('user', '')) }}')">&#128190; Dump</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak baz danych.</div>
+        {% endif %}
+    </div>
+
+    <!-- FTP Users -->
+    <div class="detail-section">
+        <h3>&#128100; Użytkownicy FTP ({{ users_ftp|length }})</h3>
+        {% if users_ftp %}
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>Login</th>
+                        <th>Katalog domowy</th>
+                        <th>Stan</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users_ftp %}
+                    <tr>
+                        <td><strong>{{ u.get('login', '—') }}</strong></td>
+                        <td>{{ u.get('home', '—') }}</td>
+                        <td>
+                            <span class="status-badge {% if u.get('state') == 'rw' or u.get('state') == 'active' %}status-active{% else %}status-inactive{% endif %}">
+                                {{ u.get('state', '—') }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm" onclick="toggleFtpPassword('{{ u.get('login', '') }}')">&#128273; Zmień hasło</button>
+                            <div id="ftp-pwd-{{ u.get('login', '') }}" class="inline-form" style="margin-top: 8px;">
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label>Nowe hasło FTP</label>
+                                        <input type="password" id="ftp-pwd-input-{{ u.get('login', '') }}" placeholder="Min. 8 znaków">
+                                    </div>
+                                    <div class="form-field" style="flex: 0 0 auto;">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-success" onclick="changeFtpPassword('{{ u.get('login', '') }}')">Zmień</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state-small">Brak użytkowników FTP.</div>
+        {% endif %}
+    </div>
+
+    <a href="{{ url_for('frontend.hosting.hosting_list', account=account) }}" class="back-link">&larr; Powrót do listy hostingów</a>
+
+    <script>
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        document.getElementById('loading-text').textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+    function hideLoading() { document.getElementById('loading-overlay').classList.remove('active'); }
+    function showToast(message, type) {
+        var t = document.createElement('div');
+        t.className = 'toast toast--' + type + ' visible';
+        t.textContent = message;
+        document.body.appendChild(t);
+        setTimeout(function() { t.classList.remove('visible'); setTimeout(function() { t.remove(); }, 300); }, 3500);
+    }
+
+    function restartHosting() {
+        if (!confirm('Czy na pewno chcesz zrestartować hosting {{ hosting_name }}?')) return;
+        showLoading('Restartowanie hostingu...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.hosting.restart_hosting", hosting_name=hosting_name) }}', { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) showToast(data.message, 'success');
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function dumpDatabase(dbName) {
+        if (!confirm('Utworzyć dump bazy ' + dbName + '? Plik zostanie wysłany na email.')) return;
+        showLoading('Tworzenie dumpu...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+
+        fetch('{{ url_for("frontend.hosting.dump_database", hosting_name=hosting_name, db_name="__DB__") }}'.replace('__DB__', dbName), { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) showToast(data.message, 'success');
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+
+    function toggleFtpPassword(login) {
+        var form = document.getElementById('ftp-pwd-' + login);
+        form.classList.toggle('visible');
+    }
+
+    function changeFtpPassword(login) {
+        var password = document.getElementById('ftp-pwd-input-' + login).value;
+        if (!password) { showToast('Hasło jest wymagane.', 'error'); return; }
+
+        showLoading('Zmiana hasła FTP...');
+        var fd = new FormData();
+        fd.append('account', '{{ account }}');
+        fd.append('password', password);
+
+        fetch('{{ url_for("frontend.hosting.change_ftp_password", hosting_name=hosting_name, login="__LOGIN__") }}'.replace('__LOGIN__', login), { method: 'POST', body: fd })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) { showToast(data.message, 'success'); toggleFtpPassword(login); }
+            else showToast(data.error || 'Błąd', 'error');
+        })
+        .catch(function(err) { hideLoading(); showToast('Błąd: ' + err, 'error'); });
+    }
+    </script>
+{% endblock %}

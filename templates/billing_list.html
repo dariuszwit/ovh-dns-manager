@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Faktury — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.billing.select_account') }}">Faktury</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128176; Faktury — <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if bills %}
+    <div class="records-table-wrap">
+        <table class="records-table sortable-table" id="billsTable">
+            <thead>
+                <tr>
+                    <th class="sortable" data-col="0" data-type="text">Nr faktury <span class="sort-arrow"></span></th>
+                    <th class="sortable" data-col="1" data-type="date">Data <span class="sort-arrow"></span></th>
+                    <th class="sortable" data-col="2" data-type="number">Kwota netto <span class="sort-arrow"></span></th>
+                    <th class="sortable" data-col="3" data-type="number">Kwota brutto <span class="sort-arrow"></span></th>
+                    <th class="sortable" data-col="4" data-type="text">Waluta <span class="sort-arrow"></span></th>
+                    <th>PDF</th>
+                    <th>Szczegóły</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bill in bills %}
+                <tr>
+                    <td><strong>{{ bill.get('billId', '—') }}</strong></td>
+                    <td>{{ bill.get('date', '—')[:10] if bill.get('date') else '—' }}</td>
+                    <td data-value="{{ bill.get('priceWithoutTax', {}).get('value', 0) }}">{{ bill.get('priceWithoutTax', {}).get('text', '—') }}</td>
+                    <td data-value="{{ bill.get('priceWithTax', {}).get('value', 0) }}">{{ bill.get('priceWithTax', {}).get('text', '—') }}</td>
+                    <td>{{ bill.get('priceWithTax', {}).get('currencyCode', '—') }}</td>
+                    <td>
+                        {% if bill.get('pdfUrl') %}
+                        <a href="{{ bill.pdfUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">&#128196; PDF</a>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('frontend.billing.bill_detail', bill_id=bill.get('billId', ''), account=account) }}" class="btn btn-sm btn-outline">&#128269; Szczegóły</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+    (function() {
+        const table = document.getElementById('billsTable');
+        const headers = table.querySelectorAll('th.sortable');
+        let currentCol = null, ascending = true;
+
+        headers.forEach(th => {
+            th.style.cursor = 'pointer';
+            th.addEventListener('click', function() {
+                const col = parseInt(this.dataset.col);
+                const type = this.dataset.type;
+
+                if (currentCol === col) {
+                    ascending = !ascending;
+                } else {
+                    ascending = true;
+                    currentCol = col;
+                }
+
+                // Update arrows
+                headers.forEach(h => h.querySelector('.sort-arrow').textContent = '');
+                this.querySelector('.sort-arrow').textContent = ascending ? ' ▲' : ' ▼';
+
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                rows.sort((a, b) => {
+                    const cellA = a.cells[col];
+                    const cellB = b.cells[col];
+                    let valA, valB;
+
+                    if (type === 'number') {
+                        valA = parseFloat(cellA.dataset.value) || parseFloat(cellA.textContent.replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                        valB = parseFloat(cellB.dataset.value) || parseFloat(cellB.textContent.replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                    } else if (type === 'date') {
+                        valA = cellA.textContent.trim();
+                        valB = cellB.textContent.trim();
+                    } else {
+                        valA = cellA.textContent.trim().toLowerCase();
+                        valB = cellB.textContent.trim().toLowerCase();
+                    }
+
+                    if (valA < valB) return ascending ? -1 : 1;
+                    if (valA > valB) return ascending ? 1 : -1;
+                    return 0;
+                });
+
+                rows.forEach(r => tbody.appendChild(r));
+            });
+        });
+    })();
+    </script>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128176;</div>
+        <p>Brak faktur na tym koncie.</p>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.billing.select_account') }}" class="back-link">&larr; Powrót do wyboru konta</a>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Lista Hostingów — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.hosting.select_account') }}">Hosting</a> /
+<span>{{ account }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128451; Hostingi na koncie <strong>{{ account }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if hostings %}
+        <div class="module-grid">
+            {% for hosting in hostings %}
+            <a href="{{ url_for('frontend.hosting.hosting_detail', hosting_name=hosting, account=account) }}" class="module-card">
+                <div class="module-card-icon">&#127760;</div>
+                <div class="module-card-name">{{ hosting }}</div>
+                <div class="module-card-action">Szczegóły &rarr;</div>
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">&#128451;</div>
+            <p>Brak hostingów na tym koncie.</p>
+        </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.hosting.select_account') }}" class="back-link">&larr; Zmień konto</a>
+{% endblock %}

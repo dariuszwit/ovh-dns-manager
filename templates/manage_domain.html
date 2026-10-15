@@ -24,40 +24,86 @@
 
     <h2>Zarządzanie domeną: {{ domain }}</h2>
 
-    <h3>Rekordy DNS</h3>
+    <!-- ===== REKORDY DNS ===== -->
+    <div class="section-header">
+        <h3>Rekordy DNS</h3>
+    </div>
+
     {% if records %}
-    <form method="post" action="{{ url_for('frontend.records.delete_records', domain=domain, account=account) }}">
+    <form id="delete-form" method="post" action="{{ url_for('frontend.records.delete_records', domain=domain, account=account) }}">
+        <div style="overflow-x: auto;">
         <table class="records-table">
             <thead>
                 <tr>
-                    <th>Wybierz</th>
-                    <th>ID</th>
-                    <th>Typ</th>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="select-all" title="Zaznacz wszystkie">
+                    </th>
+                    <th style="width: 60px;">ID</th>
+                    <th style="width: 80px;">Typ</th>
                     <th>Subdomena</th>
                     <th>Cel</th>
-                    <th>TTL</th>
+                    <th style="width: 80px;">TTL</th>
+                    <th style="width: 120px;">Akcje</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
-                <tr>
+                <tr id="row-{{ record.id }}" data-record-id="{{ record.id }}">
                     <td><input type="checkbox" name="record_ids" value="{{ record.id }}"></td>
                     <td>{{ record.id }}</td>
-                    <td>{{ record.fieldType }}</td>
-                    <td>{{ record.subDomain }}</td>
-                    <td>{{ record.target }}</td>
-                    <td>{{ record.ttl }}</td>
+                    <td>
+                        <span class="display-value">{{ record.fieldType }}</span>
+                        <span class="edit-value" style="display:none;">{{ record.fieldType }}</span>
+                    </td>
+                    <td>
+                        <span class="display-value">{{ record.subDomain }}</span>
+                        <input class="edit-value" style="display:none;" type="text"
+                               name="edit_subDomain" value="{{ record.subDomain }}">
+                    </td>
+                    <td>
+                        <span class="display-value">{{ record.target }}</span>
+                        <input class="edit-value" style="display:none;" type="text"
+                               name="edit_target" value="{{ record.target }}">
+                    </td>
+                    <td>
+                        <span class="display-value">{{ record.ttl }}</span>
+                        <input class="edit-value" style="display:none;" type="number"
+                               name="edit_ttl" value="{{ record.ttl }}" style="width:80px;">
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <button type="button" class="btn btn-primary btn-icon edit-btn"
+                                    onclick="startEdit({{ record.id }})" title="Edytuj">&#9998;</button>
+                            <button type="button" class="btn btn-success btn-icon save-btn"
+                                    style="display:none;"
+                                    onclick="saveEdit('{{ domain }}', '{{ account }}', {{ record.id }})"
+                                    title="Zapisz">&#10003;</button>
+                            <button type="button" class="btn btn-secondary btn-icon cancel-btn"
+                                    style="display:none;"
+                                    onclick="cancelEdit({{ record.id }})" title="Anuluj">&#10005;</button>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-        <button type="submit" class="add-record-btn">Usuń zaznaczone rekordy</button>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="delete-btn"
+                    onclick="return confirm('Czy na pewno chcesz usunąć zaznaczone rekordy?')">
+                Usuń zaznaczone rekordy
+            </button>
+        </div>
     </form>
     {% else %}
     <p>Brak rekordów dla tej domeny.</p>
     {% endif %}
-    
-    <h3>Dodaj nowy rekord DNS</h3>
+
+    <!-- ===== DODAJ NOWY REKORD ===== -->
+    <div class="section-header" style="margin-top: 32px;">
+        <h3>Dodaj nowy rekord DNS</h3>
+    </div>
+
     <form method="post" action="{{ url_for('frontend.records.add_records', domain=domain, account=account) }}">
         <div id="records-container">
             <div class="form-group record-row" data-index="0">
@@ -103,23 +149,47 @@
         </div>
 
         <input type="hidden" name="number_of_records" id="number_of_records" value="1">
-        <button type="button" class="add-record-btn" onclick="addRecordEntry()">Dodaj kolejny rekord</button>
-        <button type="submit" class="add-record-btn">Zapisz rekordy</button>
+        <div class="form-actions">
+            <button type="button" class="add-record-btn" onclick="addRecordEntry()">+ Dodaj kolejny rekord</button>
+            <button type="submit" class="btn btn-success" style="padding: 10px 24px;">Zapisz rekordy</button>
+        </div>
     </form>
 
-    <br>
-    <a href="{{ url_for('frontend.domain.select_domain', account=account) }}">Powrót do wyboru domeny</a>
+    <a href="{{ url_for('frontend.domain.select_domain', account=account) }}" class="back-link">&larr; Powrót do wyboru domeny</a>
 
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loading-text">Przetwarzanie...</div>
+        <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+    </div>
+
+    <!-- Zapamiętaj typy rekordów dla dynamicznych wierszy -->
     <script>
-    function updateRecordForm(selectElement) {
-        const row = selectElement.closest('.record-row');
-        const type = selectElement.value;
-        const targetLabel = row.querySelector('.target-label');
-        const priority = row.querySelector('.priority-container');
-        const weight = row.querySelector('.weight-container');
-        const port = row.querySelector('.port-container');
+    var RECORD_TYPES = {{ record_types | tojson }};
 
-        // Reset
+    /* ===== Select all checkbox ===== */
+    (function() {
+        var selectAll = document.getElementById('select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                var boxes = document.querySelectorAll('input[name="record_ids"]');
+                for (var i = 0; i < boxes.length; i++) {
+                    boxes[i].checked = selectAll.checked;
+                }
+            });
+        }
+    })();
+
+    /* ===== Formularz nowych rekordów ===== */
+    function updateRecordForm(selectElement) {
+        var row = selectElement.closest('.record-row');
+        var type = selectElement.value;
+        var targetLabel = row.querySelector('.target-label');
+        var priority = row.querySelector('.priority-container');
+        var weight = row.querySelector('.weight-container');
+        var port = row.querySelector('.port-container');
+
         priority.style.display = 'none';
         weight.style.display = 'none';
         port.style.display = 'none';
@@ -137,48 +207,181 @@
     }
 
     function addRecordEntry() {
-        const container = document.getElementById("records-container");
-        const countInput = document.getElementById("number_of_records");
-        const count = parseInt(countInput.value);
-        const newEntry = document.createElement("div");
+        var container = document.getElementById("records-container");
+        var countInput = document.getElementById("number_of_records");
+        var count = parseInt(countInput.value);
+
+        var optionsHtml = '';
+        for (var i = 0; i < RECORD_TYPES.length; i++) {
+            optionsHtml += '<option value="' + RECORD_TYPES[i] + '">' + RECORD_TYPES[i] + '</option>';
+        }
+
+        var newEntry = document.createElement("div");
         newEntry.className = "form-group record-row";
         newEntry.setAttribute("data-index", count);
-        newEntry.innerHTML = `
-            <div>
-                <label>Typ:</label>
-                <select name="record_${count}_type" class="record-type" onchange="updateRecordForm(this)" required>
-                    {% for record_type in record_types %}
-                        <option value="{{ record_type }}">{{ record_type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label>Subdomena:</label>
-                <input type="text" name="record_${count}_subDomain" placeholder="np. www">
-            </div>
-            <div class="target-wrapper">
-                <label class="target-label">Cel:</label>
-                <input type="text" name="record_${count}_target" required placeholder="np. 192.168.1.1">
-            </div>
-            <div class="priority-container" style="display: none;">
-                <label>Priorytet:</label>
-                <input type="number" name="record_${count}_priority" placeholder="np. 10">
-            </div>
-            <div class="weight-container" style="display: none;">
-                <label>Waga:</label>
-                <input type="number" name="record_${count}_weight" placeholder="np. 5">
-            </div>
-            <div class="port-container" style="display: none;">
-                <label>Port:</label>
-                <input type="number" name="record_${count}_port" placeholder="np. 5060">
-            </div>
-            <div>
-                <label>TTL:</label>
-                <input type="number" name="record_${count}_ttl" value="3600">
-            </div>
-        `;
+        newEntry.innerHTML =
+            '<button type="button" class="remove-row-btn" onclick="removeRecordEntry(this)" title="Usuń ten wiersz">&times;</button>' +
+            '<div>' +
+                '<label>Typ:</label>' +
+                '<select name="record_' + count + '_type" class="record-type" onchange="updateRecordForm(this)" required>' +
+                    optionsHtml +
+                '</select>' +
+            '</div>' +
+            '<div>' +
+                '<label>Subdomena:</label>' +
+                '<input type="text" name="record_' + count + '_subDomain" placeholder="np. www">' +
+            '</div>' +
+            '<div class="target-wrapper">' +
+                '<label class="target-label">Cel:</label>' +
+                '<input type="text" name="record_' + count + '_target" required placeholder="np. 192.168.1.1">' +
+            '</div>' +
+            '<div class="priority-container" style="display: none;">' +
+                '<label>Priorytet:</label>' +
+                '<input type="number" name="record_' + count + '_priority" placeholder="np. 10">' +
+            '</div>' +
+            '<div class="weight-container" style="display: none;">' +
+                '<label>Waga:</label>' +
+                '<input type="number" name="record_' + count + '_weight" placeholder="np. 5">' +
+            '</div>' +
+            '<div class="port-container" style="display: none;">' +
+                '<label>Port:</label>' +
+                '<input type="number" name="record_' + count + '_port" placeholder="np. 5060">' +
+            '</div>' +
+            '<div>' +
+                '<label>TTL:</label>' +
+                '<input type="number" name="record_' + count + '_ttl" value="3600">' +
+            '</div>';
         container.appendChild(newEntry);
         countInput.value = count + 1;
+    }
+
+    /* ===== Usuwanie pustego wiersza ===== */
+    function removeRecordEntry(btn) {
+        var row = btn.closest('.record-row');
+        row.remove();
+        // Zmniejsz counter (serwer i tak pomija puste)
+        var countInput = document.getElementById("number_of_records");
+        // Nie zmniejszamy – serwer sprawdza istnienie pól per indeks
+    }
+
+    /* ===== Loading overlay ===== */
+    function showLoading(text) {
+        var overlay = document.getElementById('loading-overlay');
+        var label = document.getElementById('loading-text');
+        label.textContent = text || 'Przetwarzanie...';
+        overlay.classList.add('active');
+    }
+
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('active');
+    }
+
+    /* ===== Form submit interception ===== */
+    (function() {
+        var deleteForm = document.getElementById('delete-form');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function() {
+                showLoading('Usuwanie rekordów...');
+            });
+        }
+
+        var addForms = document.querySelectorAll('form[action*="add_records"]');
+        for (var i = 0; i < addForms.length; i++) {
+            addForms[i].addEventListener('submit', function() {
+                showLoading('Zapisywanie rekordów...');
+            });
+        }
+    })();
+
+    /* ===== Inline edycja rekordu ===== */
+    function startEdit(recordId) {
+        var row = document.getElementById('row-' + recordId);
+        var displays = row.querySelectorAll('.display-value');
+        var edits = row.querySelectorAll('.edit-value');
+        for (var i = 0; i < displays.length; i++) displays[i].style.display = 'none';
+        for (var i = 0; i < edits.length; i++) edits[i].style.display = '';
+        row.querySelector('.edit-btn').style.display = 'none';
+        row.querySelector('.save-btn').style.display = '';
+        row.querySelector('.cancel-btn').style.display = '';
+    }
+
+    function cancelEdit(recordId) {
+        var row = document.getElementById('row-' + recordId);
+        var displays = row.querySelectorAll('.display-value');
+        var edits = row.querySelectorAll('.edit-value');
+        for (var i = 0; i < displays.length; i++) displays[i].style.display = '';
+        for (var i = 0; i < edits.length; i++) edits[i].style.display = 'none';
+        row.querySelector('.edit-btn').style.display = '';
+        row.querySelector('.save-btn').style.display = 'none';
+        row.querySelector('.cancel-btn').style.display = 'none';
+
+        // Reset wartości do oryginalnych
+        var inputs = row.querySelectorAll('input.edit-value');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].value = inputs[i].defaultValue;
+        }
+    }
+
+    function saveEdit(domain, account, recordId) {
+        var row = document.getElementById('row-' + recordId);
+        var subDomain = row.querySelector('input[name="edit_subDomain"]').value;
+        var target = row.querySelector('input[name="edit_target"]').value;
+        var ttl = row.querySelector('input[name="edit_ttl"]').value;
+
+        var url = '/records/edit_record/' + domain + '/' + recordId + '?account=' + encodeURIComponent(account);
+
+        var formData = new FormData();
+        formData.append('subDomain', subDomain);
+        formData.append('target', target);
+        formData.append('ttl', ttl);
+
+        showLoading('Zapisywanie rekordu #' + recordId + '...');
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                // Aktualizuj wyświetlane wartości
+                var displays = row.querySelectorAll('.display-value');
+                displays[1].textContent = subDomain;
+                displays[2].textContent = target;
+                displays[3].textContent = ttl;
+
+                // Ustaw nowe defaults
+                row.querySelector('input[name="edit_subDomain"]').defaultValue = subDomain;
+                row.querySelector('input[name="edit_target"]').defaultValue = target;
+                row.querySelector('input[name="edit_ttl"]').defaultValue = ttl;
+
+                cancelEdit(recordId);
+                showToast('Rekord zaktualizowany pomyślnie.', 'success');
+            } else {
+                showToast('Błąd: ' + (data.error || 'Nieznany błąd'), 'error');
+            }
+        })
+        .catch(function(err) {
+            hideLoading();
+            showToast('Błąd połączenia: ' + err, 'error');
+        });
+    }
+
+    /* ===== Toast notification ===== */
+    function showToast(message, type) {
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:10px;color:#fff;font-weight:600;z-index:9999;font-size:0.875rem;box-shadow:0 8px 30px rgba(0,0,0,0.18);transition:all 0.4s ease;font-family:Inter,-apple-system,sans-serif;backdrop-filter:blur(8px);';
+        toast.style.background = type === 'success'
+            ? 'linear-gradient(135deg, #10b981, #059669)'
+            : 'linear-gradient(135deg, #ef4444, #dc2626)';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(function() { toast.remove(); }, 400);
+        }, 3000);
     }
     </script>
 {% endblock %}

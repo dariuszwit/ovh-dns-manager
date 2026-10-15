@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Faktura {{ bill_id }} — {{ account }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.billing.select_account') }}">Faktury</a> /
+<a href="{{ url_for('frontend.billing.bill_list', account=account) }}">{{ account }}</a> /
+<span>{{ bill_id }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128176; Faktura <strong>{{ bill_id }}</strong></h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    {% if bill %}
+    <div class="detail-grid">
+        <div class="detail-item">
+            <span class="detail-label">Nr faktury</span>
+            <span class="detail-value">{{ bill.get('billId', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Data</span>
+            <span class="detail-value">{{ bill.get('date', '—')[:10] if bill.get('date') else '—' }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Kwota netto</span>
+            <span class="detail-value">{{ bill.get('priceWithoutTax', {}).get('text', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Kwota brutto</span>
+            <span class="detail-value">{{ bill.get('priceWithTax', {}).get('text', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Podatek</span>
+            <span class="detail-value">{{ bill.get('tax', {}).get('text', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Waluta</span>
+            <span class="detail-value">{{ bill.get('priceWithTax', {}).get('currencyCode', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Metoda płatności</span>
+            <span class="detail-value">{{ bill.get('paymentMethod', '—') }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Kategoria</span>
+            <span class="detail-value">{{ bill.get('category', '—') }}</span>
+        </div>
+        {% if bill.get('pdfUrl') %}
+        <div class="detail-item">
+            <span class="detail-label">Pobierz PDF</span>
+            <span class="detail-value">
+                <a href="{{ bill.pdfUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">&#128196; Pobierz PDF</a>
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if details %}
+    <h3 style="margin-top: 2rem;">&#128203; Pozycje faktury</h3>
+    <div class="records-table-wrap">
+        <table class="records-table">
+            <thead>
+                <tr>
+                    <th>Opis</th>
+                    <th>Domena</th>
+                    <th>Ilość</th>
+                    <th>Okres</th>
+                    <th>Cena netto</th>
+                    <th>Cena brutto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in details %}
+                <tr>
+                    <td>{{ d.get('description', '—') }}</td>
+                    <td>{{ d.get('domain', '—') }}</td>
+                    <td>{{ d.get('quantity', '—') }}</td>
+                    <td>{{ d.get('periodStart', '—')[:10] if d.get('periodStart') else '—' }} — {{ d.get('periodEnd', '—')[:10] if d.get('periodEnd') else '—' }}</td>
+                    <td>{{ d.get('unitPrice', {}).get('text', d.get('totalPrice', {}).get('text', '—')) }}</td>
+                    <td>{{ d.get('totalPrice', {}).get('text', '—') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.billing.bill_list', account=account) }}" class="back-link">&larr; Powrót do listy faktur</a>
+{% endblock %}

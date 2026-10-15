@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}SSL — {{ service_name }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="{{ url_for('frontend.dashboard.dashboard') }}">Dashboard</a> /
+<a href="{{ url_for('frontend.ssl.select_account') }}">SSL</a> /
+<a href="{{ url_for('frontend.ssl.ssl_list', account=account) }}">{{ account }}</a> /
+<span>{{ service_name }}</span>
+{% endblock %}
+
+{% block content %}
+    <h2>&#128274; {{ service_name }}</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for msg in messages %}
+                <div class="flash-msg">{{ msg }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- Certificate Info -->
+    {% if cert_info %}
+    <div class="detail-section">
+        <h3>Informacje o certyfikacie</h3>
+        <div class="info-grid">
+            {% if cert_info.serviceName %}
+            <div class="info-item">
+                <span class="info-label">Nazwa usługi</span>
+                <span class="info-value">{{ cert_info.serviceName }}</span>
+            </div>
+            {% endif %}
+            {% if cert_info.provider %}
+            <div class="info-item">
+                <span class="info-label">Dostawca</span>
+                <span class="info-value">{{ cert_info.provider }}</span>
+            </div>
+            {% endif %}
+            {% if cert_info.type %}
+            <div class="info-item">
+                <span class="info-label">Typ</span>
+                <span class="info-value">{{ cert_info.type }}</span>
+            </div>
+            {% endif %}
+            {% if cert_info.status %}
+            <div class="info-item">
+                <span class="info-label">Status</span>
+                <span class="info-value status-badge {% if cert_info.status == 'ok' or cert_info.status == 'created' %}status-active{% else %}status-inactive{% endif %}">{{ cert_info.status }}</span>
+            </div>
+            {% endif %}
+            {% if cert_info.regenerable is defined %}
+            <div class="info-item">
+                <span class="info-label">Regenerowalny</span>
+                <span class="info-value">{{ 'Tak' if cert_info.regenerable else 'Nie' }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- DNSSEC Status -->
+    {% if dnssec_status is not none %}
+    <div class="detail-section">
+        <h3>&#128737; DNSSEC</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Status DNSSEC</span>
+                <span class="info-value status-badge {% if dnssec_status.status == 'enabled' %}status-active{% else %}status-inactive{% endif %}">
+                    {{ dnssec_status.status if dnssec_status.status else dnssec_status }}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tasks -->
+    {% if tasks %}
+    <div class="detail-section">
+        <h3>&#128203; Ostatnie zadania</h3>
+        <div class="records-table-wrap">
+            <table class="records-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Funkcja</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.get('taskId', '—') }}</td>
+                        <td>{{ task.get('function', '—') }}</td>
+                        <td>
+                            <span class="status-badge {% if task.get('status') == 'done' %}status-active{% elif task.get('status') == 'error' %}status-danger{% else %}status-warning{% endif %}">
+                                {{ task.get('status', '—') }}
+                            </span>
+                        </td>
+                        <td>{{ task.get('doneDate', task.get('todoDate', '—')) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('frontend.ssl.ssl_list', account=account) }}" class="back-link">&larr; Powrót do listy certyfikatów</a>
+{% endblock %}

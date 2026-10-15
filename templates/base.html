@@ -9,35 +9,46 @@
 </head>
 <body>
 
-    <!-- MENU NAWIGACYJNE -->
-    <nav class="navbar">
-        <div class="left">
-            <img src="{{ url_for('static', filename='logo-linis-it.png') }}" alt="Linis IT" class="logo">
-        </div>
+    <!-- NAVBAR -->
+    <div class="navbar-wrap">
+        <nav class="navbar">
+            <a href="{{ url_for('frontend.dashboard.dashboard') }}" class="left">
+                <img src="{{ url_for('static', filename='logo-linis-it.png') }}" alt="Linis IT" class="logo">
+            </a>
 
-        <div class="menu-icon" onclick="toggleMenu()">☰</div>
+            <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
 
-        <div class="nav-links">
+            <div class="nav-links">
+                <a href="{{ url_for('frontend.dashboard.dashboard') }}">{{ _('Dashboard') }}</a>
+                <a href="{{ url_for('frontend.domain.select_account') }}">{{ _('Domeny') }}</a>
+                <a href="{{ url_for('frontend.hosting.select_account') }}">{{ _('Hosting') }}</a>
+                <a href="{{ url_for('frontend.email.select_account') }}">{{ _('Email') }}</a>
+                <a href="{{ url_for('frontend.ssl.select_account') }}">{{ _('SSL') }}</a>
+                <a href="{{ url_for('frontend.vps.select_account') }}">{{ _('VPS') }}</a>
+                <a href="{{ url_for('frontend.support.select_account') }}">{{ _('Zgłoszenia') }}</a>
+                <a href="{{ url_for('frontend.billing.select_account') }}">{{ _('Faktury') }}</a>
+                <a href="{{ url_for('frontend.account.select_account') }}">{{ _('Konto') }}</a>
+                <a href="{{ url_for('frontend.auth.logout') }}">{{ _('Wyloguj') }}</a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-wrap">
+        <div class="breadcrumb">
+            {% block breadcrumb %}
             <a href="{{ url_for('frontend.dashboard.dashboard') }}">{{ _('Dashboard') }}</a>
-            <a href="{{ url_for('frontend.domain.select_account') }}">{{ _('Zarządzanie Domenami') }}</a>
-            <a href="{{ url_for('frontend.auth.logout') }}">{{ _('Wyloguj') }}</a>
+            {% endblock %}
         </div>
-    </nav>
-
-    <!-- Pasek breadcrumb -->
-    <div class="breadcrumb">
-        {% block breadcrumb %}
-        <a href="{{ url_for('frontend.dashboard.dashboard') }}">{{ _('Dashboard') }}</a>
-        {% endblock %}
     </div>
 
     <div class="container">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- STOPKA -->
+    <!-- Footer -->
     <footer class="footer">
-        <p>&copy; 2025 <a href="https://linis.it" target="_blank" style="color: white;">Linis IT</a> - {{ _('Wszelkie prawa zastrzeżone') }}</p>
+        <p>&copy; 2025 <a href="https://linis.it" target="_blank">Linis IT</a> &middot; {{ _('Wszelkie prawa zastrzeżone') }}</p>
     </footer>
 
     <script>
